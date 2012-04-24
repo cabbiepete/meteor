@@ -434,8 +434,18 @@ Meteor.ui = Meteor.ui || {};
         targetNodeOrder[label] = targetNodeCounter++;
       });
 
+      var tgtParent;
+      var tgtBefore, tgtAfter;
+      if (targetRangeOrParent.firstNode) {
+        tgtParent = targetRangeOrParent.firstNode().parentNode;
+        tgtBefore = targetRangeOrParent.firstNode().previousSibling;
+        tgtAfter = targetRangeOrParent.lastNode().nextSibling;
+      } else {
+        tgtParent = targetRangeOrParent;
+      }
+
       var patcher = new Meteor.ui._Patcher(
-        targetRangeOrParent, sourceNode);
+        tgtParent, sourceNode, tgtBefore, tgtAfter);
       var lastPos = -1;
       var copyFunc = function(t, s) {
         $(t).unbind(); // XXX remove jquery events from node

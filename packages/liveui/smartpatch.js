@@ -1,23 +1,15 @@
 Meteor.ui = Meteor.ui || {};
 
 
-// tgtParentOrRange can be anything with firstNode() and lastNode()
-// methods; need not be a functioning LiveRange
-Meteor.ui._Patcher = function(tgtParentOrRange, srcParent) {
-  if (typeof tgtParentOrRange.firstNode === "function") {
-    this.beforeTgt = tgtParentOrRange.firstNode().previousSibling;
-    this.afterTgt = tgtParentOrRange.lastNode().nextSibling;
-    this.tgtParent = tgtParentOrRange.firstNode().parentNode;
-    if (! this.tgtParent)
-      throw new Error("Can't patch liverange with no parent ndoe");
-  } else {
-    this.tgtParent = tgtParentOrRange;
-  }
+Meteor.ui._Patcher = function(tgtParent, srcParent, tgtBefore, tgtAfter) {
+  this.tgtParent = tgtParent;
   this.srcParent = srcParent;
+
+  this.tgtBefore = tgtBefore;
+  this.tgtAfter = tgtAfter;
 
   this.lastKeptTgtNode = null;
   this.lastKeptSrcNode = null;
-
 };
 
 // Advances the patching process up to tgtNode in the target tree,
@@ -171,41 +163,41 @@ Meteor.ui._Patcher.prototype.finish = function() {
   return this.match(null, null);
 };
 
-// Replaces the siblings between beforeTgt and afterTgt (exclusive on both
-// sides) with the siblings between beforeSrc and afterSrc (exclusive on both
+// Replaces the siblings between tgtBefore and tgtAfter (exclusive on both
+// sides) with the siblings between srcBefore and srcAfter (exclusive on both
 // sides).  Falsy values indicate start or end of siblings as appropriate.
 //
-// Precondition: beforeTgt and afterTgt have same parent; either may be falsy,
-// but not both, unless optTgtParent is provided.  Same with beforeSrc/afterSrc.
+// Precondition: tgtBefore and tgtAfter have same parent; either may be falsy,
+// but not both, unless optTgtParent is provided.  Same with srcBefore/srcAfter.
 Meteor.ui._Patcher.prototype._replaceNodes = function(
-  beforeTgt, afterTgt, beforeSrc, afterSrc, optTgtParent, optSrcParent)
+  tgtBefore, tgtAfter, srcBefore, srcAfter, optTgtParent, optSrcParent)
 {
-  var tgtParent = optTgtParent || (beforeTgt || afterTgt).parentNode;
-  var srcParent = optSrcParent || (beforeSrc || afterSrc).parentNode;
+  var tgtParent = optTgtParent || (tgtBefore || tgtAfter).parentNode;
+  var srcParent = optSrcParent || (srcBefore || srcAfter).parentNode;
 
   // deal with case where top level is a range
   if (tgtParent === this.tgtParent) {
-    beforeTgt = beforeTgt || this.beforeTgt;
-    afterTgt = afterTgt || this.afterTgt;
+    tgtBefore = tgtBefore || this.tgtBefore;
+    tgtAfter = tgtAfter || this.tgtAfter;
   }
   if (srcParent === this.srcParent) {
-    beforeSrc = beforeSrc || this.beforeSrc;
-    afterSrc = afterSrc || this.afterSrc;
+    srcBefore = srcBefore || this.srcBefore;
+    srcAfter = srcAfter || this.srcAfter;
   }
 
 
   // remove old children
   var n;
-  while ((n = beforeTgt ? beforeTgt.nextSibling : tgtParent.firstChild)
-         && n !== afterTgt) {
+  while ((n = tgtBefore ? tgtBefore.nextSibling : tgtParent.firstChild)
+         && n !== tgtAfter) {
     tgtParent.removeChild(n);
   }
 
   // add new children
   var m;
-  while ((m = beforeSrc ? beforeSrc.nextSibling : srcParent.firstChild)
-         && m !== afterSrc) {
-    tgtParent.insertBefore(m, afterTgt || null);
+  while ((m = srcBefore ? srcBefore.nextSibling : srcParent.firstChild)
+         && m !== srcAfter) {
+    tgtParent.insertBefore(m, tgtAfter || null);
   }
 };
 
