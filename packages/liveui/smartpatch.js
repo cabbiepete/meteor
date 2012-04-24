@@ -12,6 +12,65 @@ Meteor.ui._Patcher = function(tgtParent, srcParent, tgtBefore, tgtAfter) {
   this.lastKeptSrcNode = null;
 };
 
+Meteor.ui._Patcher.prototype.diffpatch = function(copyCallback) {
+  var self = this;
+
+  var each_labeled_node = function(parent, before, after, func) {
+    for(var n = before ? before.nextSibling : parent.firstChild;
+        n && n !== after;
+        n = n.nextSibling) {
+
+      if (n.nodeType === 1) {
+        if (n.id) {
+          func('#'+n.id, n);
+          continue;
+        } else if (n.getAttribute("name")) {
+          func(n.getAttribute("name"), n);
+          continue;
+        }
+      }
+
+      // not a labeled node; recurse
+      each_labeled_node(n, null, null, func);
+    }
+  };
+
+
+  var targetNodes = {};
+  var targetNodeOrder = {};
+  var targetNodeCounter = 0;
+
+  each_labeled_node(
+    self.tgtParent, self.tgtBefore, self.tgtAfter,
+    function(label, node) {
+      targetNodes[label] = node;
+      targetNodeOrder[label] = targetNodeCounter++;
+    });
+
+  var lastPos = -1;
+  each_labeled_node(
+    self.srcParent, null, null,
+    function(label, node) {
+      var tgt = targetNodes[label];
+      var src = node;
+      if (tgt && targetNodeOrder[label] > lastPos) {
+        if (self.match(tgt, src, copyCallback)) {
+          // match succeeded
+          if (tgt.firstChild || src.firstChild) {
+            // recurse with a new Patcher!
+            var patcher = new Meteor.ui._Patcher(tgt, src);
+            patcher.diffpatch(copyCallback);
+          }
+        }
+        lastPos = targetNodeOrder[label];
+      }
+    });
+
+  self.finish();
+
+};
+
+
 // Advances the patching process up to tgtNode in the target tree,
 // and srcNode in the source tree.  tgtNode will be preserved, with
 // the attributes of srcNode copied over it, in essence identifying
