@@ -291,18 +291,6 @@ Meteor.ui = Meteor.ui || {};
                  this._start_idx + 1);
   };
 
-  Meteor.ui._LiveRange.visit_children = function(rangeOrParent, tag,
-                                                 visit_range, visit_node)
-  {
-    if (rangeOrParent.firstNode) {
-      _visit_nodes(rangeOrParent.tag, rangeOrParent.firstNode(),
-                   rangeOrParent.lastNode(), visit_range, visit_node);
-    } else {
-      if (rangeOrParent.firstChild)
-        _visit_nodes(tag, rangeOrParent.firstChild, rangeOrParent.lastChild,
-                     visit_range, visit_node);
-    }
-  };
 
   // If ranges starting between first_node and last_node extend past
   // last_node, we will visit them and keep going.  We don't detect
